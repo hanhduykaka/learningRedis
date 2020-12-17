@@ -1,5 +1,4 @@
 const express = require('express');
-const path = require('path');
 const bodyParser = require('body-parser');
 const redis = require('redis');
 const md5 = require('md5');
@@ -30,23 +29,46 @@ app.use(expressJWT({ secret: secretKey, algorithms: ['HS256'] }).unless(
     {
         path: [
             '/api/v1/login',
-            '/user/add'
+            '/user/add' // ~~ register
         ]
     }
 
 ));
 
+// get all User
+app.get('/user', (req, res, next) => {    
+    client.hgetall('users', function (err, obj) {
+        if (!obj) {
+            res.end(JSON.stringify({
+                error: 'User does not exist'
+            }));
+        } else {
+            let result = [];
+            for (const [key, value] of Object.entries(obj)) {
+               const user = JSON.parse(value);
+               user.id = key;
+                result.push(
+                    user
+                    );
+              }
+            res.end(JSON.stringify({
+                users: result
+            }));
+        }
+    })
+});
+
 // get User
 app.get('/user/:id', (req, res, next) => {
     const id = req.params.id;
-    client.hgetall(id, function (err, obj) {
+    client.hget('users', id, function (err, obj) {
         if (!obj) {
             res.end(JSON.stringify({
                 error: 'User does not exist'
             }));
         } else {
             res.end(JSON.stringify({
-                user: obj
+                user:  JSON.parse(obj)
             }));
         }
     })
@@ -58,12 +80,12 @@ app.post('/user/add',
     (req, res, next) => {
         let errorsResult = validationResult(req);
         const id = req.body.id;
-        client.hgetall(id, (err, obj) => {
+        client.hget('users', id, (err, obj) => {
             if (obj) {
                 var error =
                 {
                     param: "id",
-                    msg: "id already use"
+                    msg: `id:${id} already use`
                     , value: id
                 };
                 errorsResult.errors.push(error);
@@ -81,7 +103,7 @@ app.put('/user/:id',
     (req, res, next) => {
         let errorsResult = validationResult(req);
         const id = req.params.id;
-        client.hgetall(id, (err, obj) => {
+        client.hget('users', id, (err, obj) => {
             if (!obj) {
                 var error =
                 {
@@ -99,8 +121,8 @@ app.put('/user/:id',
     });
 
 // Delete User
-app.delete('/user/delete/:id', (req, res, next) => {
-    client.del(req.params.id);
+app.delete('/user/:id', (req, res, next) => {
+    client.hdel("users", req.params.id);
     res.end(JSON.stringify({
         status: res.statusCode,
         success: 'OK'
@@ -118,28 +140,21 @@ app.post('/api/posts', (req, res) => {
 
 // get token
 app.post('/api/v1/login', (req, res) => {
-    // Mock user
-    // const user = {
-    //     id: 208361,
-    //     username: 'tainguyen',
-    //     email: 'ntttai@tma.com.vn'
-    // }
-
-
-    client.hgetall(req.body.id, function (err, obj) {
+    client.hget('users', req.body.id, function (err, obj) {
         if (!obj) {
             res.end(JSON.stringify({
                 error: 'User does not exist',
                 token: ''
             }));
         } else {
-            if (obj.pass_word !== md5(req.body.pass_word)) {
+            const objModel = JSON.parse(obj);
+            if (objModel.pass_word !== md5(req.body.pass_word)) {
                 res.end(JSON.stringify({
                     error: 'Pass word not correct',
                     token: ''
                 }));
             }
-            jwt.sign({ obj }, secretKey, { expiresIn: '180s', algorithm: 'HS256' }, (err, token) => {
+            jwt.sign({ objModel }, secretKey, { expiresIn: '360s', algorithm: 'HS256' }, (err, token) => {
                 res.json({
                     token
                 });
@@ -167,48 +182,30 @@ function setData(id, req, res) {
     const age = req.body.age;
     let pass_word = req.body.pass_word;
     pass_word = md5(pass_word);
+    var user = {
+        'first_name': first_name,
+        'last_name': last_name,
+        'email': email,
+        'age': age,
+        'pass_word': pass_word
+    }
+    client.hset("users", id, JSON.stringify(user)
+        , function (err, reply) {
+            if (err) {
+                console.log(err)
+                res.end(JSON.stringify({
+                    status: res.statusCode,
+                    success: 'Not success'
+                }));
+            }
 
-    client.hmset(id, [
-        'first_name', first_name,
-        'last_name', last_name,
-        'email', email,
-        'age', age,
-        'pass_word', pass_word
-    ], function (err, reply) {
-
-        if (err) {
             res.end(JSON.stringify({
                 status: res.statusCode,
-                success: 'Not success'
+                success: 'OK'
             }));
-        }
-
-        res.end(JSON.stringify({
-            status: res.statusCode,
-            success: 'OK'
-        }));
-    });
+        });
 }
 
-// Verify Token
-function verifyToken(req, res, next) {
-    // Get auth header value
-    const bearerHeader = req.headers['authorization'];
-    // Check if bearer is undefined
-    if (typeof bearerHeader !== 'undefined') {
-        // Split at the space
-        const bearer = bearerHeader.split(' ');
-        // Get token from array
-        const bearerToken = bearer[1];
-        // Set the token
-        req.token = bearerToken;
-        // Next middleware
-        next();
-    } else {
-        // Forbidden
-        res.sendStatus(403);
-    }
-}
 
 app.get('*', function (req, res) {
     res.setHeader("Access-Control-Allow-Origin", "*");
