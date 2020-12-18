@@ -4,8 +4,8 @@ const expressJWT = require('express-jwt');
 const config = require('./config');
 
 // Set Port
-const port = config.port;
-
+let port = process.env.PORT ||(process.argv[2]|| config.port);
+port = (typeof port === 'number')? port : config.port;
 // Init app
 const app = express();
 
@@ -34,8 +34,11 @@ app.get('*', function (req, res) {
     res.end("Please try again with another source api");
 });
 
-app.listen(port, function () {
-    console.log('Server started on port ' + port);
-});
+if(!module.parrent){
+    app.listen(port, function () {
+        console.log('Server started on port ' + port);
+    });
+}
+
 
 module.exports = app;

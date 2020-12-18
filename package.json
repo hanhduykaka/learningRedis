@@ -13,10 +13,12 @@
     "redis": "^3.0.2"
   },
   "devDependencies": {
-    "mocha": "^8.2.1"
+    "mocha": "^8.2.1",
+    "chai": "^4.2.0",
+    "chai-http": "^4.3.0"
   },
   "scripts": {
-    "test": "mocha",
+    "test": "mocha --watch",
     "start": "node app"
   },
   "author": "tai",

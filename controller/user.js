@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const config = require('../config');
 const client = require('../redisClient');
 const secretKey = config.secretKey;
+const { validationResult } = require('express-validator')
 
 // get all Users
 function getUsers(req, res) {
