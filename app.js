@@ -4,7 +4,8 @@ const redis = require('redis');
 const md5 = require('md5');
 const jwt = require('jsonwebtoken');
 const expressJWT = require('express-jwt');
-const { body, check, checkBody, validationResult } = require('express-validator');
+const { body, validationResult } = require('express-validator');
+const config = require('./config');
 
 // Create Redis Client
 let client = redis.createClient();
@@ -14,7 +15,7 @@ client.on('connect', function () {
 });
 
 // Set Port
-const port = 2300;
+const port = config.port;
 
 // Init app
 const app = express();
@@ -23,53 +24,67 @@ const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
-const secretKey = "meocondethuong";
+const secretKey = config.secretKey;
 
-app.use(expressJWT({ secret: secretKey, algorithms: ['HS256'] }).unless(
+app.use(expressJWT({
+    secret: secretKey, algorithms: [config.algorithms]
+}).unless(
     {
         path: [
             '/api/v1/login',
             '/user/add' // ~~ register
         ]
     }
-
 ));
 
-// get all User
-app.get('/user', (req, res, next) => {    
-    client.hgetall('users', function (err, obj) {
+// get all Users
+app.get('/user', (req, res, next) => {
+    client.hgetall(config.tblUserName, function (err, obj) {
         if (!obj) {
-            res.end(JSON.stringify({
-                error: 'User does not exist'
-            }));
+            return res.status(200).json(
+                {
+                    statusCode: 200,
+                    msg: config.msg.users.doesNotHaveAny,
+                    data: null
+                });
+
         } else {
             let result = [];
             for (const [key, value] of Object.entries(obj)) {
-               const user = JSON.parse(value);
-               user.id = key;
+                const user = JSON.parse(value);
+                user.id = key;
                 result.push(
                     user
-                    );
-              }
-            res.end(JSON.stringify({
-                users: result
-            }));
+                );
+            }
+            return res.status(200).json(
+                {
+                    statusCode: 200,
+                    msg: config.msg.ok,
+                    data: { users: result }
+                });
         }
     })
 });
 
-// get User
+// get User by id
 app.get('/user/:id', (req, res, next) => {
     const id = req.params.id;
-    client.hget('users', id, function (err, obj) {
+    client.hget(config.tblUserName, id, function (err, obj) {
         if (!obj) {
-            res.end(JSON.stringify({
-                error: 'User does not exist'
-            }));
+            return res.status(200).json(
+                {
+                    statusCode: 200,
+                    msg: config.msg.users.userDoesNotExist,
+                    data: null
+                });
         } else {
-            res.end(JSON.stringify({
-                user:  JSON.parse(obj)
-            }));
+            return res.status(200).json(
+                {
+                    statusCode: 200,
+                    msg: config.msg.ok,
+                    data: { user: JSON.parse(obj) }
+                });
         }
     })
 });
@@ -80,41 +95,48 @@ app.post('/user/add',
     (req, res, next) => {
         let errorsResult = validationResult(req);
         const id = req.body.id;
-        client.hget('users', id, (err, obj) => {
+        client.hget(config.tblUserName, id, (err, obj) => {
             if (obj) {
                 var error =
                 {
-                    param: "id",
-                    msg: `id:${id} already use`
-                    , value: id
+                    msg: `${config.msg.users.userWithId} ${id} ${config.msg.users.alreadyUse}`
                 };
                 errorsResult.errors.push(error);
             }
             if (!errorsResult.isEmpty()) {
-                return res.status(400).json({ errorsResult: errorsResult.array() });
+                return res.status(400).json(
+                    {
+                        statusCode: 400,
+                        msg: `${config.msg.badRequest} ${errorsResult.errors[0].msg}`,
+                        data: null
+                    });
             }
             setData(id, req, res);
         })
     });
 
-//  Add User 
+//  edit User 
 app.put('/user/:id',
     validateParam(),
     (req, res, next) => {
         let errorsResult = validationResult(req);
         const id = req.params.id;
-        client.hget('users', id, (err, obj) => {
+        client.hget(config.tblUserName, id, (err, obj) => {
             if (!obj) {
                 var error =
                 {
-                    param: "id",
-                    msg: `User with id=${id} not exits`
-                    , value: id
+                    msg: `${config.msg.userWithId} ${id} ${config.msg.doesNotExist}`
                 };
                 errorsResult.errors.push(error);
             }
             if (!errorsResult.isEmpty()) {
-                return res.status(400).json({ errorsResult: errorsResult.array() });
+
+                return res.status(400).json(
+                    {
+                        statusCode: 400,
+                        msg: `${config.msg.badRequest} ${errorsResult.errors[0].msg}`,
+                        data: null
+                    });
             }
             setData(id, req, res);
         })
@@ -122,56 +144,78 @@ app.put('/user/:id',
 
 // Delete User
 app.delete('/user/:id', (req, res, next) => {
-    client.hdel("users", req.params.id);
-    res.end(JSON.stringify({
-        status: res.statusCode,
-        success: 'OK'
-    }));
+    const id = req.params.id;
+    client.hget(config.tblUserName, id, function (err, obj) {
+        if (obj) {
+            client.hdel(config.tblUserName, id);
+            return res.status(200).json(
+                {
+                    statusCode: 200,
+                    msg: config.msg.ok,
+                    data: null
+                });
+        } else {
+            return res.status(200).json(
+                {
+                    statusCode: 200,
+                    msg: `${config.msg.users.userWithId} ${id} ${config.msg.users.doesNotExist}`,
+                    data: null
+                });
+        }
+    });
 });
 
 // api test token
 app.post('/api/posts', (req, res) => {
-
     res.json({
-        message: 'Post created...'
+        statusCode: 200,
+        msg: 'Test success',
+        data: null
     });
-
 });
 
 // get token
 app.post('/api/v1/login', (req, res) => {
-    client.hget('users', req.body.id, function (err, obj) {
+    client.hget(config.tblUserName, req.body.id, function (err, obj) {
         if (!obj) {
-            res.end(JSON.stringify({
-                error: 'User does not exist',
-                token: ''
-            }));
+            return res.status(200).json(
+                {
+                    statusCode: 200,
+                    msg: config.msg.users.userDoesNotExist,
+                    data: { token: '' }
+                });
         } else {
             const objModel = JSON.parse(obj);
-            if (objModel.pass_word !== md5(req.body.pass_word)) {
-                res.end(JSON.stringify({
-                    error: 'Pass word not correct',
-                    token: ''
-                }));
+            if (objModel.password !== md5(req.body.password)) {
+                return res.status(200).json(
+                    {
+                        statusCode: 200,
+                        msg: config.msg.users.passwordNotCorrect,
+                        data: { token: '' }
+                    });
             }
-            jwt.sign({ objModel }, secretKey, { expiresIn: '360s', algorithm: 'HS256' }, (err, token) => {
-                res.json({
-                    token
+            jwt.sign(
+                { objModel },
+                secretKey,
+                { expiresIn: config.timeOut, algorithm: config.algorithms },
+                (err, token) => {
+                    return res.status(200).json(
+                        {
+                            statusCode: 200,
+                            msg: config.msg.ok,
+                            data: { token: token }
+                        });
+                
                 });
-            });
-
         }
     })
-
-
-
 });
 
 //validate non-custom
 function validateParam() {
-    return [body('email').isEmail().withMessage("Invalid email"),
+    return [body('email').isEmail().withMessage(config.msg.users.invalidEmail),
     // password must be at least 8 chars long
-    body('pass_word').isLength({ min: 8 }).withMessage("password must be at least 8 character")]
+    body('password').isLength({ min: 8 }).withMessage(config.msg.users.passAtLeast8Char)]
 }
 
 //set data to redis
@@ -180,32 +224,34 @@ function setData(id, req, res) {
     const last_name = req.body.last_name;
     const email = req.body.email;
     const age = req.body.age;
-    let pass_word = req.body.pass_word;
-    pass_word = md5(pass_word);
+    let password = req.body.password;
+    password = md5(password);
     var user = {
         'first_name': first_name,
         'last_name': last_name,
         'email': email,
         'age': age,
-        'pass_word': pass_word
-    }
-    client.hset("users", id, JSON.stringify(user)
+        'password': password
+    };
+    client.hset(config.tblUserName, id, JSON.stringify(user)
         , function (err, reply) {
             if (err) {
                 console.log(err)
-                res.end(JSON.stringify({
-                    status: res.statusCode,
-                    success: 'Not success'
-                }));
+                return res.status(res.statusCode).json(
+                    {
+                        statusCode: res.statusCode,
+                        msg: config.msg.notSuccess,
+                        data: null
+                    });
             }
-
-            res.end(JSON.stringify({
-                status: res.statusCode,
-                success: 'OK'
-            }));
+            return res.status(res.statusCode).json(
+                {
+                    statusCode: res.statusCode,
+                    msg: config.msg.ok,
+                    data: null
+                });
         });
 }
-
 
 app.get('*', function (req, res) {
     res.setHeader("Access-Control-Allow-Origin", "*");
