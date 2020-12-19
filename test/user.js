@@ -30,6 +30,7 @@ describe(config.tblUserName, () => {
     });
 
     describe('POST  User', () => {
+
         it('it should not Post with invalid email', (done) => {
             let user = {
                 id: '1',
@@ -41,8 +42,46 @@ describe(config.tblUserName, () => {
             }
             chai.request(app).post(config.url.users.add).send(user).end((err, res) => {
                 res.should.have.status(400);
+                should.equal(res.body.data, null);
+                should.equal(res.body.msg, `${config.msg.badRequest} ${config.msg.users.invalidEmail}`);
                 done();
             })
         });
+
+        it('it should not Post with password less than 8 char', (done) => {
+            let user = {
+                id: '1',
+                first_name: 'teo',
+                last_name: 'nguyen',
+                email: 'teonguyen@gmail.com',
+                age: 14,
+                password: '1234567'
+            }
+            chai.request(app).post(config.url.users.add).send(user).end((err, res) => {
+                res.should.have.status(400);
+                should.equal(res.body.data, null);
+                res.body.msg.should.eql(`${config.msg.badRequest} ${config.msg.users.passAtLeast8Char}`);
+                done();
+            })
+        });
+
+        it('it should not Post with empty field id', (done) => {
+            let user = {
+                first_name: 'teo',
+                last_name: 'nguyen',
+                email: 'teonguyen@gmail.com',
+                age: 14,
+                password: '1234567'
+            }
+            chai.request(app).post(config.url.users.add).send(user).end((err, res) => {
+                res.should.have.status(400);
+                should.equal(res.body.data, null);
+                res.body.msg.should.eql(`${config.msg.badRequest} Field id ${config.msg.users.canNotBeEmpty}`);
+                done();
+            })
+        });
+
     });
+
+
 });

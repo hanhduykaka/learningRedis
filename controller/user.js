@@ -21,7 +21,6 @@ function getUsers(req, res) {
             let result = [];
             for (const [key, value] of Object.entries(obj)) {
                 const user = JSON.parse(value);
-                user.id = key;
                 result.push(
                     user
                 );
@@ -59,8 +58,8 @@ function getUserById(req, res) {
 }
 
 //  Add User 
-function postUser(req, res) {    
-    var errorsResult = validationResult(req);   
+function postUser(req, res) {
+    var errorsResult = validationResult(req);
     const id = req.body.id;
     client.hget(config.tblUserName, id, (err, obj) => {
         if (obj) {
@@ -83,7 +82,7 @@ function postUser(req, res) {
 }
 
 //  edit User 
-function putUser(req, res) {  
+function putUser(req, res) {
     let errorsResult = validationResult(req);
     const id = req.params.id;
     client.hget(config.tblUserName, id, (err, obj) => {
@@ -93,7 +92,7 @@ function putUser(req, res) {
                 msg: `${config.msg.users.userWithId} ${id} ${config.msg.users.doesNotExist}`
             };
             errorsResult.errors.push(error);
-        }  
+        }
         if (!errorsResult.isEmpty()) {
             return res.status(400).json(
                 {
@@ -141,9 +140,6 @@ function getToken(req, res) {
                 });
         } else {
             const objModel = JSON.parse(obj);
-            console.log(objModel)
-            console.log(md5(req.body.password))
-
             if (objModel.password !== md5(req.body.password)) {
                 return res.status(200).json(
                     {
@@ -177,13 +173,13 @@ function setData(client, id, req, res) {
     const age = req.body.age;
     let password = req.body.password;
     password = md5(password);
-    var user = {
-        'first_name': first_name,
-        'last_name': last_name,
-        'email': email,
-        'age': age,
-        'password': password
-    };
+    var user = {};
+    user[config.users.id] = id;
+    user[config.users.first_name] = first_name;
+    user[config.users.last_name] = last_name;
+    user[config.users.email] = email;
+    user[config.users.age] = age;
+    user[config.users.password] = password;
     client.hset(config.tblUserName, id, JSON.stringify(user)
         , function (err, reply) {
             if (err) {
