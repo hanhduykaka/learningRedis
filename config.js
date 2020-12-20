@@ -19,6 +19,8 @@ config.users.last_name = 'last_name';
 config.users.email = 'email';
 config.users.age = 'age';
 config.users.password = 'password';
+config.users.confirm_password = 'confirm_password';
+
 
 //url router
 config.url = {};
@@ -37,6 +39,8 @@ config.msg = {};
 config.msg.ok = 'OK';
 config.msg.badRequest = 'Bad request';
 config.msg.notSuccess = 'Not success';
+config.msg.field = 'Field';
+
 
 //msg for user
 config.msg.users = {};
@@ -47,6 +51,8 @@ config.msg.users.userWithId = 'User with id:';
 config.msg.users.passwordNotCorrect = 'Password not correct';
 config.msg.users.invalidEmail = 'Invalid Email';
 config.msg.users.passAtLeast8Char = 'Password must be at least 8 character';
+config.msg.users.confirmPasswordMismatch = 'Password and confirm password mismatch';
+
 config.msg.users.alreadyUse = 'already use';
 config.msg.users.canNotBeEmpty = 'can not be empty';
 

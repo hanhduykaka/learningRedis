@@ -48,6 +48,22 @@ describe(config.tblUserName, () => {
             })
         });
 
+        it('it should not Post with empty field email', (done) => {
+            let user = {
+                id: 'tainguyen2020',
+                first_name: 'teo',
+                last_name: 'nguyen',
+                age: 14,
+                password: '1234567'
+            }
+            chai.request(app).post(config.url.users.add).send(user).end((err, res) => {
+                res.should.have.status(400);
+                should.equal(res.body.data, null);
+                res.body.msg.should.eql(`${config.msg.badRequest} ${config.msg.field} ${config.users.email} ${config.msg.users.canNotBeEmpty}`);
+                done();
+            })
+        });
+
         it('it should not Post with password less than 8 char', (done) => {
             let user = {
                 id: '1',
@@ -65,6 +81,57 @@ describe(config.tblUserName, () => {
             })
         });
 
+        it('it should not Post with password empty', (done) => {
+            let user = {
+                id: '1',
+                first_name: 'teo',
+                last_name: 'nguyen',
+                email: 'teonguyen@gmail.com',
+                age: 14,
+            }
+            chai.request(app).post(config.url.users.add).send(user).end((err, res) => {
+                res.should.have.status(400);
+                should.equal(res.body.data, null);
+                res.body.msg.should.eql(`${config.msg.badRequest} ${config.msg.field} ${config.users.password} ${config.msg.users.canNotBeEmpty}`);
+                done();
+            })
+        });
+
+        it('it should not Post with confirm password empty', (done) => {
+            let user = {
+                id: '1',
+                first_name: 'teo',
+                last_name: 'nguyen',
+                email: 'teonguyen@gmail.com',
+                age: 14,
+                password: '12345678'
+            }
+            chai.request(app).post(config.url.users.add).send(user).end((err, res) => {
+                res.should.have.status(400);
+                should.equal(res.body.data, null);
+                res.body.msg.should.eql(`${config.msg.badRequest} ${config.msg.field} ${config.users.confirm_password} ${config.msg.users.canNotBeEmpty}`);
+                done();
+            })
+        });
+
+        it('it should not Post with confirm password and password mismatch', (done) => {
+            let user = {
+                id: '1',
+                first_name: 'teo',
+                last_name: 'nguyen',
+                email: 'teonguyen@gmail.com',
+                age: 14,
+                password: '12345678',
+                confirm_password: '123'
+            }
+            chai.request(app).post(config.url.users.add).send(user).end((err, res) => {
+                res.should.have.status(400);
+                should.equal(res.body.data, null);
+                res.body.msg.should.eql(`${config.msg.badRequest} ${config.msg.users.confirmPasswordMismatch}`);
+                done();
+            })
+        });
+
         it('it should not Post with empty field id', (done) => {
             let user = {
                 first_name: 'teo',
@@ -76,12 +143,13 @@ describe(config.tblUserName, () => {
             chai.request(app).post(config.url.users.add).send(user).end((err, res) => {
                 res.should.have.status(400);
                 should.equal(res.body.data, null);
-                res.body.msg.should.eql(`${config.msg.badRequest} Field id ${config.msg.users.canNotBeEmpty}`);
+                res.body.msg.should.eql(`${config.msg.badRequest} ${config.msg.field} ${config.users.id} ${config.msg.users.canNotBeEmpty}`);
                 done();
             })
         });
 
-    });
 
+
+    });
 
 });
