@@ -21,7 +21,6 @@ exports.checkUser = [
             }
             return true;
         }).withMessage(config.msg.users.confirmPasswordMismatch)
-
 ]
 
 exports.checkLogin = [
