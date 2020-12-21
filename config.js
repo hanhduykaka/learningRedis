@@ -54,7 +54,7 @@ config.msg.users.invalidEmail = 'Invalid Email';
 config.msg.users.passAtLeast8Char = 'Password must be at least 8 character';
 config.msg.users.confirmPasswordMismatch = 'Password and confirm password mismatch';
 
-config.msg.users.alreadyUse = 'already use';
+config.msg.users.alreadyUse = 'already used';
 config.msg.users.canNotBeEmpty = 'can not be empty';
 
 

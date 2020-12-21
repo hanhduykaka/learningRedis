@@ -28,10 +28,10 @@ app.use(expressJWT({
 ));
 
 app.get('*', function (req, res) {
-    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('content-type', 'application/json');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.end("Please try again with another source api");
+    res.end('Please try again with another source api');
 });
 
 if(!module.parrent){
