@@ -130,6 +130,15 @@ function deleteUser(req, res) {
 
 // get token
 function getToken(req, res) {
+    var errorsResult = validationResult(req);
+    if (!errorsResult.isEmpty()) {
+        return res.status(400).json(
+            {
+                statusCode: 400,
+                msg: `${config.msg.badRequest} ${errorsResult.errors[0].msg}`,
+                data: null
+            });
+    }
     client.hget(config.tblUserName, req.body.id, function (err, obj) {
         if (!obj) {
             return res.status(200).json(

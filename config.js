@@ -28,6 +28,7 @@ config.url.login = '/api/v1/login';
 
 //url for users
 config.url.users = {};
+config.url.users.user = '/user/';
 config.url.users.add = '/user/add';
 config.url.users.getAll = '/user';
 config.url.users.byId = '/user/:id';

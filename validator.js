@@ -23,3 +23,12 @@ exports.checkUser = [
         }).withMessage(config.msg.users.confirmPasswordMismatch)
 
 ]
+
+exports.checkLogin = [
+    check(config.users.id)
+    .not().isEmpty()
+    .withMessage(`${config.msg.field} ${config.users.id} ${config.msg.users.canNotBeEmpty}`),
+    check(config.users.password)
+    .not().isEmpty()
+    .withMessage(`${config.msg.field} ${config.users.password} ${config.msg.users.canNotBeEmpty}`)
+]
