@@ -22,7 +22,7 @@ describe(config.tblUserName, () => {
         done();
     });
 
-    describe('GET all Users when empty data', () => {
+    describe('GET all Users', () => {
 
         it('it should return empty data', (done) => {
             chai.request(app).get(config.url.users.getAll).end((err, res) => {
@@ -33,7 +33,7 @@ describe(config.tblUserName, () => {
                 res.body.should.have.property('statusCode');
                 res.body.msg.should.eql(config.msg.users.doesNotHaveAny);
                 done();
-            })
+            });
         });
 
         it('it should return all user', (done) => {
@@ -60,7 +60,7 @@ describe(config.tblUserName, () => {
                         should.equal(res.body.data.users[0].first_name, user[config.users.first_name]);
                         should.equal(res.body.data.users[0].last_name, user[config.users.last_name]);
                         done();
-                    })
+                    });
                 });
         });
 
@@ -83,7 +83,7 @@ describe(config.tblUserName, () => {
                 should.equal(res.body.data, null);
                 should.equal(res.body.msg, `${config.msg.badRequest} ${config.msg.users.invalidEmail}`);
                 done();
-            })
+            });
         });
 
         it('it should not post with empty field email', (done) => {

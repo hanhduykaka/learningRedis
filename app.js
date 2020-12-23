@@ -12,7 +12,7 @@ const app = express();
 // body-parser
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
-app.use(require('./router'));
+
 
 const secretKey = config.secretKey;
 
@@ -26,6 +26,7 @@ app.use(expressJWT({
         ]
     }
 ));
+app.use(require('./router'));
 
 app.get('*', function (req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
